@@ -6,6 +6,11 @@
 #' @import Rlabkey
 #' @import shinydashboard
 #' @import shinyjs
+#' @import InteractiveComplexHeatmap
+#' @import ComplexHeatmap
+#' @import colourpicker
+#' @import circlize
+#'
 #' @noRd
 app_server <- function(input, output, session) {
   library(shinydashboard)
@@ -25,7 +30,7 @@ app_server <- function(input, output, session) {
   observe({
     query <- parseQueryString(session$clientData$url_search)
     if (!is.null(query[['key']])) {
-
+      #browser()
       #updateSliderInput(session, "bins", value = query[['bins']])
       key <<- query[['key']]
       subF <<- query[['sub']]
@@ -120,11 +125,12 @@ app_server <- function(input, output, session) {
       #cat("Result request => ")
       #cat(as.character(labkey.data),"\n")
       if(!is.null(metaData1)){
-        metaData1 <<- metaData1[,colSums(is.na(dataDF))<nrow(dataDF)]
+        #browser()
+        metaData1 <<- metaData1[,colSums(is.na(metaData1))<nrow(metaData1)]
         output$meta1 <- DT::renderDT(metaData1)
       }
       if(!is.null(metaData2)){
-        metaData2 <<- metaData2[,colSums(is.na(dataDF))<nrow(dataDF)]
+        metaData2 <<- metaData2[,colSums(is.na(metaData1))<nrow(metaData1)]
         output$meta2 <- DT::renderDT(metaData2)
       }
       dataDF <<- labkey.data
@@ -149,7 +155,49 @@ app_server <- function(input, output, session) {
                            options = list(placeholder = 'Please select a variable below'))
     }
     if(plotType == "HeatMap"){
+      shinyjs::hide(id = "colMetaDataVec")
+      shinyjs::hide(id = "rowMetaDataVec")
+      updateSelectizeInput(inputId = "rowNameCol",
+                           choices = c('',c(colnames(dataDF),"NONE"))
+                           )
+      observeEvent(input$colMetaData,{
+        cat("\n colMetaData:",input$colMetaData)
+        if(input$colMetaData != "NONE"){
+          shinyjs::show(id = "colMetaDataVec")
+          if(input$colMetaData == "Metadata1"){
+            updateSelectizeInput(inputId = "colMetaDataVec",
+                                 choices = colnames(meta1),
+                                 options = list(placeholder = 'Please select a variable below'))
+          }
+          if(input$colMetaData == "Metadata2"){
+            updateSelectizeInput(inputId = "colMetaDataVec",
+                                 choices = colnames(meta2),
+                                 options = list(placeholder = 'Please select a variable below'))
+          }
 
+        }else{
+          shinyjs::hide(id = "colMetaDataVec")
+        }
+      })
+      observeEvent(input$rowMetaData,{
+        cat("\n rowMetaData:",input$rowMetaData)
+        if(input$rowMetaData != "NONE"){
+          shinyjs::show(id = "rowMetaDataVec")
+          if(input$rowMetaData == "Metadata1"){
+            #browser()
+            updateSelectizeInput(inputId = "rowMetaDataVec",
+                                 choices = colnames(metaData1),
+                                 options = list(placeholder = 'Please select a variable below'))
+          }
+          if(input$rowMetaData == "Metadata2"){
+            updateSelectizeInput(inputId = "rowMetaDataVec",
+                                 choices = colnames(metaData2),
+                                 options = list(placeholder = 'Please select a variable below'))
+          }
+        }else{
+          shinyjs::hide(id = "rowMetaDataVec")
+        }
+      })
     }
   })
   observeEvent(input$DrawPlot,{
@@ -184,22 +232,76 @@ app_server <- function(input, output, session) {
     if(plotType == "HeatMap"){
       shinyjs::show(id = "heatmapOutput")
       shinyjs::hide(id = "plotOut")
+      topAnno = NULL
+      leftAnno = NULL
+      if(input$rowNameCol != ""){
+        if(input$rowNameCol %in% colnames(dataDF)){
+          rowNameCol <- input$rowNameCol
+          rownames(dataDF) <<- dataDF[,rowNameCol]
+          dataDF <<- dataDF[,!names(dataDF) %in% c(rowNameCol)]
+        }
+        #browser()
+      }
+      if(input$rowMetaDataVec != ""){
+        if(input$rowMetaData == "Metadata1"){
+          cat("Create LeftMetaData1")
+          leftAnno <- rowAnnotation(LeftClass = metaData1[,input$rowMetaDataVec])
+        }
+        if(input$colMetaData == "Metadata2"){
+          cat("Create LeftMetaData2")
+          leftAnno <- rowAnnotation(LeftClass = metaData2[,input$rowMetaDataVec])
+        }
+      }
+      if(input$colMetaDataVec != ""){
+        if(input$colMetaData == "Metadata1"){
+          cat("Create LeftMetaData1")
+          topAnno <- HeatmapAnnotation(LeftClass = metaData1[,input$rowMetaDataVec])
+        }
+        if(input$colMetaData == "Metadata2"){
+          cat("Create LeftMetaData2")
+          topAnno <- HeatmapAnnotation(LeftClass = metaData2[,input$rowMetaDataVec])
+        }
+      }
+
+      #build color list
+      #browser()
+      minMat <- min(dataDF)
+      maxMat <- max(dataDF)
+      moyMat <- (minMat+maxMat)/2
+      #browser()
+      colMin <- input$colorLow
+      colMid <- input$colorMid
+      colMax <- input$colorHigh
+      col_name <- circlize::colorRamp2(c(minMat, moyMat, maxMat), c(colMin,colMid,colMax))
+
       dataDF <- as.matrix(dataDF)
-      if(input$colCluster == FALSE & input$rowCluster == FALSE){
-        cat("No clustering at all")
-        plotRes <<- ComplexHeatmap::Heatmap(matrix = dataDF,cluster_rows = FALSE,cluster_columns = FALSE)
-      }
-      else if(input$colCluster == FALSE){
-        cat("No column clustering")
-        plotRes <<- ComplexHeatmap::Heatmap(matrix = dataDF,cluster_columns = FALSE)
-      }
-      else if(input$rowCluster == FALSE){
-        cat("No Row clustering")
-        plotRes <<- ComplexHeatmap::Heatmap(matrix = dataDF,cluster_rows = FALSE)
-      }else{
-        cat("Full Clustering")
-        plotRes <<- ComplexHeatmap::Heatmap(dataDF)
-      }
+        if(input$colCluster == FALSE & input$rowCluster == FALSE){
+          cat("No clustering at all")
+          plotRes <<- ComplexHeatmap::Heatmap(matrix = dataDF,cluster_rows = FALSE,cluster_columns = FALSE,
+                                              left_annotation = leftAnno, top_annotation = topAnno,show_row_dend = input$rowDendogram,
+                                              show_column_dend = input$colDendogram,show_column_names = input$colNames,
+                                              show_row_names = input$rowNames,col = col_name)
+        }
+        else if(input$colCluster == FALSE){
+          cat("No column clustering")
+          plotRes <<- ComplexHeatmap::Heatmap(matrix = dataDF,cluster_columns = FALSE,
+                                              left_annotation = leftAnno, top_annotation = topAnno,show_row_dend = input$rowDendogram,
+                                              show_column_dend = input$colDendogram,show_column_names = input$colNames,
+                                              show_row_names = input$rowNames,col = col_name)
+        }
+        else if(input$rowCluster == FALSE){
+          cat("No Row clustering")
+          plotRes <<- ComplexHeatmap::Heatmap(matrix = dataDF,cluster_rows = FALSE,
+                                              left_annotation = leftAnno, top_annotation = topAnno,show_row_dend = input$rowDendogram,
+                                              show_column_dend = input$colDendogram,show_column_names = input$colNames,
+                                              show_row_names = input$rowNames,col = col_name)
+        }else{
+          cat("Full Clustering")
+          #browser()
+          plotRes <<- ComplexHeatmap::Heatmap(dataDF,left_annotation = leftAnno, top_annotation = topAnno,show_row_dend = input$rowDendogram,
+                                              show_column_dend = input$colDendogram,show_column_names = input$colNames,
+                                              show_row_names = input$rowNames,col = col_name)
+        }
       makeInteractiveComplexHeatmap(input = input,output = output,session = session,ht_list = plotRes,heatmap_id = "heatmapOutput")
     }
     updateTabsetPanel(inputId = "MainTabs",selected = "Plot")

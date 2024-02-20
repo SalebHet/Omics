@@ -6,6 +6,8 @@
 #' @import shinydashboard
 #' @import shinyWidgets
 #' @import InteractiveComplexHeatmap
+#' @import shinyjs
+#' @import colourpicker
 #' @noRd
 
 library(shinydashboard)
@@ -28,8 +30,20 @@ app_ui <- function(request) {
                ),
 
       menuItem("HeatMap", tabName = "HeatMap", icon = icon("paintbrush"),startExpanded = FALSE,
+               selectizeInput("rowNameCol",label = "Select column for row names",
+                              choices = c(Choose = "", NULL),
+                              options = list(placeholder = 'Please select a column name below')),
+               colourpicker::colourInput(inputId = "colorLow",label = "Color for lowest value",showColour = "background",value = "Blue",returnName = TRUE),
+               colourpicker::colourInput(inputId = "colorMid",label = "Color for mid value",showColour = "background",value = "White",returnName = TRUE),
+               colourpicker::colourInput(inputId = "colorHigh",label = "Color for highest value",showColour = "background",value = "Red",returnName = TRUE),
                checkboxInput(inputId = "colCluster", label = "Clustering Column",TRUE),
                checkboxInput(inputId = "rowCluster", label = "Clustering Row",TRUE),
+               checkboxInput(inputId = "colDendogram", label = "Show Column Deondogram",TRUE),
+               checkboxInput(inputId = "rowDendogram", label = "Show Row Dendogram",TRUE),
+               checkboxInput(inputId = "colNames", label = "Show Column Names",TRUE),
+               checkboxInput(inputId = "rowNames", label = "Show Row Names",TRUE),
+
+
                radioButtons(inputId = "rowMetaData","Select dataset for rows legend",
                             choices = c(NONE = "NONE",meta1 = "Metadata1",meta2 = "Metadata2"),
                             selected = "NONE"),
@@ -46,6 +60,7 @@ app_ui <- function(request) {
       actionBttn(inputId = "DrawPlot", label = "Draw Plot")
   )),
   dashboardBody(tabsetPanel(id = "MainTabs",
+    shinyjs::useShinyjs(),
     tabPanel("Dataset",  tagList(
       DT::dataTableOutput("dataSet")
     )),
