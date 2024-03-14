@@ -24,6 +24,11 @@ app_server <- function(input, output, session) {
   meta2 <- NULL
   metaData1 <- NULL
   metaData2 <- NULL
+  listRowClass <- NULL
+  listColClass <- NULL
+  graphType <- NULL
+  rowMetaDataVec <- NULL
+  colMetaDataVec <- NULL
   library(Rlabkey)
   shinyjs::hide(id = "plotOut")
   shinyjs::hide(id = "heatmapOutput")
@@ -138,9 +143,11 @@ app_server <- function(input, output, session) {
       output$dataSet <- DT::renderDT(dataDF)
     }
   })
+  #browser()
   observeEvent(input$sidebarItemExpanded,{
     plotType <- input$sidebarItemExpanded
     if(plotType == "VolcanoPlot"){
+      graphType <<- "VolcanoPlot"
       updateSelectizeInput(session, inputId = "log2FC",
                            selected = '',
                            choices = c('',colnames(dataDF)),
@@ -155,11 +162,27 @@ app_server <- function(input, output, session) {
                            options = list(placeholder = 'Please select a variable below'))
     }
     if(plotType == "HeatMap"){
+      graphType <<- "HeatMap"
       shinyjs::hide(id = "colMetaDataVec")
       shinyjs::hide(id = "rowMetaDataVec")
       updateSelectizeInput(inputId = "rowNameCol",
                            choices = c('',c(colnames(dataDF),"NONE"))
                            )
+      rowNameCol <- ""
+      observeEvent(input$rowNameCol,{
+        #browser()
+        if(input$rowNameCol != ""){
+          rowNameCol <<- input$rowNameCol
+          cat("update rowNameCol as: ",rowNameCol)
+        }
+        if(input$rowNameCol == "" && rowNameCol != ""){
+          cat("reset selection with: ",rowNameCol)
+          updateSelectizeInput(inputId = "rowNameCol",
+                               choices = c('',c(colnames(dataDF),"NONE")),
+                               selected = rowNameCol
+          )
+        }
+      })
       observeEvent(input$colMetaData,{
         cat("\n colMetaData:",input$colMetaData)
         if(input$colMetaData != "NONE"){
@@ -198,11 +221,91 @@ app_server <- function(input, output, session) {
           shinyjs::hide(id = "rowMetaDataVec")
         }
       })
+
+      observeEvent(input$rowMetaDataVec,{
+        #browser()
+          if(is.null(input$sidebarItemExpanded) == TRUE){#input$sideBarItemExpanded != "HeatMap"){#
+            #browser()
+            if(input$rowMetaData == "Metadata1"){
+              rowMetaDataVec <<- input$rowMetaDataVec
+              listRowClass <<- unique(metaData1[,input$rowMetaDataVec])
+
+              output$rowLegendColors <- renderUI({
+                #map(listRowClass(),)
+                rowLegendColors <- lapply(listRowClass, function(i){
+                  #browser()
+                  colourpicker::colourInput(inputId = paste0("color",i),label = paste("Select color for",i),showColour = "background",
+                                            value = "Blue",returnName = TRUE)
+                })
+
+                do.call(tagList,rowLegendColors)
+              })
+            }
+            if(input$rowMetaData == "Metadata2"){
+              rowMetaDataVec <<- input$rowMetaDataVec
+              listRowClass <<- unique(metaData2[,input$rowMetaDataVec])
+
+              output$rowLegendColors <- renderUI({
+                #map(listRowClass(),)
+                rowLegendColors <- lapply(listRowClass, function(i){
+                  #browser()
+                  colourpicker::colourInput(inputId = paste0("color",i),label = paste("Select color for",i),showColour = "background",
+                                            value = "Blue",returnName = TRUE)
+                })
+
+                do.call(tagList,rowLegendColors)
+              })
+            }
+          }
+      }
+
+        # for( i in i:length(listRowClass)){
+        #
+        # }
+      )
+      observeEvent(input$colMetaDataVec,{
+        #browser()
+        if(is.null(input$sidebarItemExpanded) == TRUE){#input$sideBarItemExpanded != "HeatMap"){#
+          #browser()
+          if(input$colMetaData == "Metadata1"){
+            colMetaDataVec <<- input$colMetaDataVec
+            listcolClass <<- unique(metaData1[,input$colMetaDataVec])
+
+            output$colLegendColors <- renderUI({
+              #map(listRowClass(),)
+              colLegendColors <- lapply(listColClass, function(i){
+                #browser()
+                colourpicker::colourInput(inputId = paste0("color",i),label = paste("Select color for",i),showColour = "background",
+                                          value = "Blue",returnName = TRUE)
+              })
+
+              do.call(tagList,colLegendColors)
+            })
+          }
+          if(input$colMetaData == "Metadata2"){
+            colMetaDataVec <<- input$colMetaDataVec
+            listColClass <<- unique(metaData2[,input$colMetaDataVec])
+
+            output$colLegendColors <- renderUI({
+              #map(listRowClass(),)
+              colLegendColors <- lapply(listColClass, function(i){
+                #browser()
+                colourpicker::colourInput(inputId = paste0("color",i),label = paste("Select color for",i),showColour = "background",
+                                          value = "Blue",returnName = TRUE)
+              })
+
+              do.call(tagList,colLegendColors)
+            })
+          }
+        }
+      })
     }
   })
+
   observeEvent(input$DrawPlot,{
-    plotType <- input$sidebarItemExpanded
-    if(plotType == "VolcanoPlot"){
+    #browser()
+    #plotType <- input$sidebarItemExpanded
+    if(graphType == "VolcanoPlot"){
       shinyjs::hide(id = "heatmapOutput")
       shinyjs::show(id = "plotOut")
       if(input$log2FC == "" | input$pval == ""){
@@ -229,11 +332,12 @@ app_server <- function(input, output, session) {
         output$plotOut <- renderPlot(plotRes)
       }
     }
-    if(plotType == "HeatMap"){
+    if(graphType == "HeatMap"){
       shinyjs::show(id = "heatmapOutput")
       shinyjs::hide(id = "plotOut")
       topAnno = NULL
       leftAnno = NULL
+      #browser()
       if(input$rowNameCol != ""){
         if(input$rowNameCol %in% colnames(dataDF)){
           rowNameCol <- input$rowNameCol
@@ -242,39 +346,64 @@ app_server <- function(input, output, session) {
         }
         #browser()
       }
-      if(input$rowMetaDataVec != ""){
+      if(rowMetaDataVec != ""){
+        #browser()
+        colVec <- list(LeftClass = c())
+        listCol <- c()
+        for (x in 1:length(listRowClass)) {
+          #browser()
+          cat(paste("\n color of ",listRowClass[x]))
+          cat(input[[paste0("color",listRowClass[x])]])
+          #newColor <- list(input[[paste0("color",listRowClass[x])]])
+          #browser()
+          listCol <- c(listCol,input[[paste0("color",listRowClass[x])]])
+        }
+        colVec$LeftClass <- listCol
+        #browser()
+        names(colVec$LeftClass) <- listRowClass
         if(input$rowMetaData == "Metadata1"){
           cat("Create LeftMetaData1")
-          leftAnno <- rowAnnotation(LeftClass = metaData1[,input$rowMetaDataVec])
+          leftAnno <- rowAnnotation(LeftClass = sample(as.character(metaData1[,rowMetaDataVec])),col = colVec)
         }
         if(input$colMetaData == "Metadata2"){
           cat("Create LeftMetaData2")
-          leftAnno <- rowAnnotation(LeftClass = metaData2[,input$rowMetaDataVec])
+          leftAnno <- rowAnnotation(LeftClass =sample(as.character(metaData2[,rowMetaDataVec])),col = colVec)
         }
       }
       if(input$colMetaDataVec != ""){
+        colVec <- list(TopClass = c())
+        listCol <- c()
+        for (x in 1:length(listColClass)) {
+
+          listCol <- c(listCol,input[[paste0("color",listColClass[x])]])
+        }
+        colVec$TopClass <- listCol
+        #browser()
+        names(colVec$LeftClass) <- listRowClass
         if(input$colMetaData == "Metadata1"){
-          cat("Create LeftMetaData1")
-          topAnno <- HeatmapAnnotation(LeftClass = metaData1[,input$rowMetaDataVec])
+          cat("Create TopMetaData1")
+          topAnno <- HeatmapAnnotation(TopClass = sample(as.character(metaData1[,input$colMetaDataVec])),col = colVec)
         }
         if(input$colMetaData == "Metadata2"){
-          cat("Create LeftMetaData2")
-          topAnno <- HeatmapAnnotation(LeftClass = metaData2[,input$rowMetaDataVec])
+          cat("Create TopMetaData2")
+          topAnno <- HeatmapAnnotation(TopClass = sample(as.character(metaData2[,input$colBMetaDataVec])),col = colVec)
         }
       }
 
       #build color list
       #browser()
-      minMat <- min(dataDF)
-      maxMat <- max(dataDF)
+      dataDF <- as.matrix(dataDF)
+      #browser()
+      minMat <- unname(quantile(dataDF,0.025))#min(dataDF)
+      maxMat <- unname(quantile(dataDF,0.975))#max(dataDF)
       moyMat <- (minMat+maxMat)/2
       #browser()
       colMin <- input$colorLow
       colMid <- input$colorMid
       colMax <- input$colorHigh
       col_name <- circlize::colorRamp2(c(minMat, moyMat, maxMat), c(colMin,colMid,colMax))
+      #browser()
 
-      dataDF <- as.matrix(dataDF)
         if(input$colCluster == FALSE & input$rowCluster == FALSE){
           cat("No clustering at all")
           plotRes <<- ComplexHeatmap::Heatmap(matrix = dataDF,cluster_rows = FALSE,cluster_columns = FALSE,

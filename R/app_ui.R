@@ -33,32 +33,47 @@ app_ui <- function(request) {
                selectizeInput("rowNameCol",label = "Select column for row names",
                               choices = c(Choose = "", NULL),
                               options = list(placeholder = 'Please select a column name below')),
+
+               menuItem("HeatmapColor", tabName = "HeatmapColor",startExpanded = FALSE,
                colourpicker::colourInput(inputId = "colorLow",label = "Color for lowest value",showColour = "background",value = "Blue",returnName = TRUE),
                colourpicker::colourInput(inputId = "colorMid",label = "Color for mid value",showColour = "background",value = "White",returnName = TRUE),
-               colourpicker::colourInput(inputId = "colorHigh",label = "Color for highest value",showColour = "background",value = "Red",returnName = TRUE),
-               checkboxInput(inputId = "colCluster", label = "Clustering Column",TRUE),
-               checkboxInput(inputId = "rowCluster", label = "Clustering Row",TRUE),
-               checkboxInput(inputId = "colDendogram", label = "Show Column Deondogram",TRUE),
-               checkboxInput(inputId = "rowDendogram", label = "Show Row Dendogram",TRUE),
-               checkboxInput(inputId = "colNames", label = "Show Column Names",TRUE),
-               checkboxInput(inputId = "rowNames", label = "Show Row Names",TRUE),
+               colourpicker::colourInput(inputId = "colorHigh",label = "Color for highest value",showColour = "background",value = "Red",returnName = TRUE)
+               ),
 
+               menuItem("HeatmapConfig", tabName = "HeatmapConfig",startExpanded = FALSE,
+                 checkboxInput(inputId = "colCluster", label = "Clustering Column",TRUE),
+                 checkboxInput(inputId = "rowCluster", label = "Clustering Row",TRUE),
+                 checkboxInput(inputId = "colDendogram", label = "Show Column Deondogram",TRUE),
+                 checkboxInput(inputId = "rowDendogram", label = "Show Row Dendogram",TRUE),
+                 checkboxInput(inputId = "colNames", label = "Show Column Names",TRUE),
+                 checkboxInput(inputId = "rowNames", label = "Show Row Names",TRUE)
+               ),
 
+              menuItem("RowMetadata", tabName = "RowMetadata",startExpanded = FALSE,
                radioButtons(inputId = "rowMetaData","Select dataset for rows legend",
                             choices = c(NONE = "NONE",meta1 = "Metadata1",meta2 = "Metadata2"),
                             selected = "NONE"),
                selectizeInput("rowMetaDataVec",label = "Select column for row class",
                                                               choices = c(Choose = "", NULL),
                                                               options = list(placeholder = 'Please select a column name below')),
+               uiOutput("rowLegendColors")
+               ),
+
+              menuItem("ColumnMetadata", tabName = "ColumnMetadata",startExpanded = FALSE,
                radioButtons(inputId = "colMetaData",
                             "Select dataset for columns legend",
                             choices = c(NONE = "NONE",meta1 = "Metadata1",meta2 = "Metadata2"),
                             selected = "NONE"),
                selectizeInput("colMetaDataVec",label = "Select column for column class",
                               choices = c(Choose = "", NULL),
-                              options = list(placeholder = 'Please select a column name below'))),
+                              options = list(placeholder = 'Please select a column name below'))
+               )
+              ),
+
+      menuItem("Umap", tabName = "Umap", icon = icon("paintbrush"),startExpanded = FALSE),
       actionBttn(inputId = "DrawPlot", label = "Draw Plot")
   )),
+
   dashboardBody(tabsetPanel(id = "MainTabs",
     shinyjs::useShinyjs(),
     tabPanel("Dataset",  tagList(
@@ -74,7 +89,8 @@ app_ui <- function(request) {
       plotOutput("plotOut"),
       InteractiveComplexHeatmapOutput(heatmap_id = "heatmapOutput")
     )),
-  )))
+  ))
+  )
 
 }
 
