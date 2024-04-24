@@ -23,6 +23,8 @@ RUN R -e 'remotes::install_cran("shinyjs")'
 RUN R -e 'remotes::install_cran("golem")'
 RUN R -e 'remotes::install_cran("scales")'
 RUN R -e 'remotes::install_cran("DT")'
+RUN R -e 'remotes::install_cran("devtools")'
+RUN R -e 'devtools::install_github("jlmelville/uwot")'
 COPY Omics_*.tar.gz /app.tar.gz
 
 RUN R -e 'remotes::install_local("/app.tar.gz")'
