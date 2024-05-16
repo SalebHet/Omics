@@ -70,7 +70,14 @@ app_ui <- function(request) {
                )
               ),
 
-      menuItem("Umap", tabName = "Umap", icon = icon("paintbrush"),startExpanded = FALSE),
+      menuItem("Umap", tabName = "Umap", icon = icon("paintbrush"),startExpanded = FALSE,
+               sliderInput(inputId = "NVoisin", label = "NVoisin",min = 2,max = 100, value = 15),
+               sliderInput(inputId = "distMin", label = "distMin", min = 0 , max = 1 , value = 0.01),
+               sliderInput(inputId = "n_composant", label = "n_composant", min = 2, max = 100, value = 2),
+               selectizeInput("colLabel",label = "Select column for Labels",
+                              choices = c(Choose = "", NULL),
+                              options = list(placeholder = 'Please select a column name below'))
+               ),
       actionBttn(inputId = "DrawPlot", label = "Draw Plot")
   )),
 

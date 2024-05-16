@@ -10,6 +10,7 @@
 #' @import ComplexHeatmap
 #' @import colourpicker
 #' @import circlize
+#' @import uwot
 #'
 #' @noRd
 app_server <- function(input, output, session) {
@@ -46,10 +47,11 @@ app_server <- function(input, output, session) {
       meta2 <<- query[['meta2']]
       cat("meta1: ",meta1)
       cat("meta2: ",meta2)
-
       Rlabkey::labkey.setDefaults(apiKey=key)#"apikey|73ea3ff0973f38d52f5b1bbd8980f62c")
       Rlabkey::labkey.setDefaults(baseUrl = "https://labk.bph.u-bordeaux.fr/")#(baseUrl="https://labkey.bph.u-bordeaux.fr:8443/")
-      if(type=="assay"){
+      #browser()
+      if(type=="Assay"){
+        #browser()
         labkey.data <- labkey.selectRows(
           baseUrl="https://labk.bph.u-bordeaux.fr",
           #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -61,7 +63,7 @@ app_server <- function(input, output, session) {
           #colFilter=makeFilter(c("Run/RowId", "EQUAL", "140"),c("Antigen", "NOT_EQUAL_OR_MISSING", "Negative control")),
           containerFilter=NULL
         )
-        if(length(meta1) > 0){
+        if(length(meta1) > 1){
           metaData1 <<- labkey.selectRows(
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -74,7 +76,7 @@ app_server <- function(input, output, session) {
             containerFilter=NULL
           )
         }
-        if(length(meta2) > 0){
+        if(length(meta2) > 1){
           metaData2 <<- labkey.selectRows(
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -88,7 +90,7 @@ app_server <- function(input, output, session) {
           )
         }
       }
-      if(type=="dataset"){
+      if(type=="DataSet"){
         labkey.data <- labkey.selectRows(
           baseUrl="https://labk.bph.u-bordeaux.fr",
           #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -100,7 +102,7 @@ app_server <- function(input, output, session) {
           #colFilter=makeFilter(c("Run/RowId", "EQUAL", "140"),c("Antigen", "NOT_EQUAL_OR_MISSING", "Negative control")),
           containerFilter=NULL
         )
-        if(length(meta1) > 0){
+        if(length(meta1) > 1){
           metaData1 <<- labkey.selectRows(
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -113,7 +115,7 @@ app_server <- function(input, output, session) {
             containerFilter=NULL
           )
         }
-        if(length(meta2) > 0){
+        if(length(meta2) > 1){
           metaData2 <<- labkey.selectRows(
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -138,6 +140,7 @@ app_server <- function(input, output, session) {
         metaData2 <<- metaData2[,colSums(is.na(metaData1))<nrow(metaData1)]
         output$meta2 <- DT::renderDT(metaData2)
       }
+      #browser()
       dataDF <<- labkey.data
       dataDF <<- dataDF[,colSums(is.na(dataDF))<nrow(dataDF)]
       output$dataSet <- DT::renderDT(dataDF)
@@ -300,6 +303,13 @@ app_server <- function(input, output, session) {
         }
       })
     }
+    if(plotType == "Umap"){
+      graphType <<- "Umap"
+      updateSelectizeInput(session, inputId = "colLabel",
+                           selected = '',
+                           choices = c('',colnames(dataDF)),
+                           options = list(placeholder = 'Please select a variable below'))
+    }
   })
 
   observeEvent(input$DrawPlot,{
@@ -432,6 +442,24 @@ app_server <- function(input, output, session) {
                                               show_row_names = input$rowNames,col = col_name)
         }
       makeInteractiveComplexHeatmap(input = input,output = output,session = session,ht_list = plotRes,heatmap_id = "heatmapOutput")
+    }
+    if(graphType == "Umap"){
+      #browser()
+      shinyjs::hide(id = "heatmapOutput")
+      shinyjs::show(id = "plotOut")
+      nNeigh <- input$NVoisin
+      distMin <- input$distMin
+      nComp <- input$n_composant
+      dataDF[,input$colLabel] <- as.factor(dataDF[,input$colLabel])
+      plotumap <- umap(dataDF, n_neighbors = nNeigh, min_dist = distMin, n_components = nComp,verbose = FALSE)
+      #browser()
+      output$plotOut <- renderPlot(plot(  plotumap,
+                                          cex = 0.1,
+                                          col = grDevices::rainbow(n = length(levels(dataDF[,input$colLabel])))[as.integer(dataDF[,input$colLabel])] |>
+                                            grDevices::adjustcolor(alpha.f = 0.1),
+                                          main = "R uwot::umap",
+                                          xlab = "",
+                                          ylab = ""))
     }
     updateTabsetPanel(inputId = "MainTabs",selected = "Plot")
   })
