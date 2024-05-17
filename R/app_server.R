@@ -316,7 +316,8 @@ app_server <- function(input, output, session) {
     #browser()
     #plotType <- input$sidebarItemExpanded
     if(graphType == "VolcanoPlot"){
-      shinyjs::hide(id = "heatmapOutput")
+      shinyjs::hide(id = "heatmapOutput_heatmap_group")
+      shinyjs::hide(id = "heatmapOutput_sub_heatmap_group")
       shinyjs::show(id = "plotOut")
       if(input$log2FC == "" | input$pval == ""){
         cat("Must show alert")
@@ -343,7 +344,8 @@ app_server <- function(input, output, session) {
       }
     }
     if(graphType == "HeatMap"){
-      shinyjs::show(id = "heatmapOutput")
+      shinyjs::show(id = "heatmapOutput_heatmap_group")
+      shinyjs::show(id = "heatmapOutput_sub_heatmap_group")
       shinyjs::hide(id = "plotOut")
       topAnno = NULL
       leftAnno = NULL
@@ -445,7 +447,8 @@ app_server <- function(input, output, session) {
     }
     if(graphType == "Umap"){
       #browser()
-      shinyjs::hide(id = "heatmapOutput")
+      shinyjs::hide(id = "heatmapOutput_heatmap_group")
+      shinyjs::hide(id = "heatmapOutput_sub_heatmap_group")
       shinyjs::show(id = "plotOut")
       nNeigh <- input$NVoisin
       distMin <- input$distMin
@@ -456,8 +459,8 @@ app_server <- function(input, output, session) {
       output$plotOut <- renderPlot(plot(  plotumap,
                                           cex = 0.1,
                                           col = grDevices::rainbow(n = length(levels(dataDF[,input$colLabel])))[as.integer(dataDF[,input$colLabel])] |>
-                                            grDevices::adjustcolor(alpha.f = 0.1),
-                                          main = "R uwot::umap",
+                                            grDevices::adjustcolor(alpha.f = input$alphaF),
+                                          main = paste(assay, "Umap"),
                                           xlab = "",
                                           ylab = ""))
     }

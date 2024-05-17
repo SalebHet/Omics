@@ -76,7 +76,8 @@ app_ui <- function(request) {
                sliderInput(inputId = "n_composant", label = "n_composant", min = 2, max = 100, value = 2),
                selectizeInput("colLabel",label = "Select column for Labels",
                               choices = c(Choose = "", NULL),
-                              options = list(placeholder = 'Please select a column name below'))
+                              options = list(placeholder = 'Please select a column name below')),
+               sliderInput(inputId = "alphaF", label = "Degrès translucidicité", min = 0, max = 1, value = 1)
                ),
       actionBttn(inputId = "DrawPlot", label = "Draw Plot")
   )),
