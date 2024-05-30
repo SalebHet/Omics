@@ -63,7 +63,8 @@ app_server <- function(input, output, session) {
           #colFilter=makeFilter(c("Run/RowId", "EQUAL", "140"),c("Antigen", "NOT_EQUAL_OR_MISSING", "Negative control")),
           containerFilter=NULL
         )
-        if(length(meta1) > 1){
+        #browser()
+        if(nchar(meta1) > 1){
           metaData1 <<- labkey.selectRows(
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -76,7 +77,7 @@ app_server <- function(input, output, session) {
             containerFilter=NULL
           )
         }
-        if(length(meta2) > 1){
+        if(nchar(meta2) > 1){
           metaData2 <<- labkey.selectRows(
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -102,7 +103,7 @@ app_server <- function(input, output, session) {
           #colFilter=makeFilter(c("Run/RowId", "EQUAL", "140"),c("Antigen", "NOT_EQUAL_OR_MISSING", "Negative control")),
           containerFilter=NULL
         )
-        if(length(meta1) > 1){
+        if(nchar(meta1) > 1){
           metaData1 <<- labkey.selectRows(
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -115,7 +116,7 @@ app_server <- function(input, output, session) {
             containerFilter=NULL
           )
         }
-        if(length(meta2) > 1){
+        if(nchar(meta2) > 1){
           metaData2 <<- labkey.selectRows(
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
@@ -356,30 +357,33 @@ app_server <- function(input, output, session) {
           rownames(dataDF) <<- dataDF[,rowNameCol]
           dataDF <<- dataDF[,!names(dataDF) %in% c(rowNameCol)]
         }
-        #browser()
+
       }
-      if(rowMetaDataVec != ""){
-        #browser()
-        colVec <- list(LeftClass = c())
-        listCol <- c()
-        for (x in 1:length(listRowClass)) {
+      #browser()
+      if(!is.null(rowMetaDataVec)){
+        if(rowMetaDataVec != ""){
           #browser()
-          cat(paste("\n color of ",listRowClass[x]))
-          cat(input[[paste0("color",listRowClass[x])]])
-          #newColor <- list(input[[paste0("color",listRowClass[x])]])
+          colVec <- list(LeftClass = c())
+          listCol <- c()
+          for (x in 1:length(listRowClass)) {
+            #browser()
+            cat(paste("\n color of ",listRowClass[x]))
+            cat(input[[paste0("color",listRowClass[x])]])
+            #newColor <- list(input[[paste0("color",listRowClass[x])]])
+            #browser()
+            listCol <- c(listCol,input[[paste0("color",listRowClass[x])]])
+          }
+          colVec$LeftClass <- listCol
           #browser()
-          listCol <- c(listCol,input[[paste0("color",listRowClass[x])]])
-        }
-        colVec$LeftClass <- listCol
-        #browser()
-        names(colVec$LeftClass) <- listRowClass
-        if(input$rowMetaData == "Metadata1"){
-          cat("Create LeftMetaData1")
-          leftAnno <- rowAnnotation(LeftClass = sample(as.character(metaData1[,rowMetaDataVec])),col = colVec)
-        }
-        if(input$colMetaData == "Metadata2"){
-          cat("Create LeftMetaData2")
-          leftAnno <- rowAnnotation(LeftClass =sample(as.character(metaData2[,rowMetaDataVec])),col = colVec)
+          names(colVec$LeftClass) <- listRowClass
+          if(input$rowMetaData == "Metadata1"){
+            cat("Create LeftMetaData1")
+            leftAnno <- rowAnnotation(LeftClass = sample(as.character(metaData1[,rowMetaDataVec])),col = colVec)
+          }
+          if(input$colMetaData == "Metadata2"){
+            cat("Create LeftMetaData2")
+            leftAnno <- rowAnnotation(LeftClass =sample(as.character(metaData2[,rowMetaDataVec])),col = colVec)
+          }
         }
       }
       if(input$colMetaDataVec != ""){
