@@ -45,6 +45,9 @@ app_server <- function(input, output, session) {
       type <- query[['type']]
       meta1 <<- query[['meta1']]
       meta2 <<- query[['meta2']]
+      expressionAssayType <<- query[['expressionAssayType']]
+      metaAssayType <<- query[['metaAssayType']]
+      meta2AssayType <<- query[['meta2AssayType']]
       cat("meta1: ",meta1)
       cat("meta2: ",meta2)
       Rlabkey::labkey.setDefaults(apiKey=key)#"apikey|73ea3ff0973f38d52f5b1bbd8980f62c")
@@ -56,7 +59,8 @@ app_server <- function(input, output, session) {
           baseUrl="https://labk.bph.u-bordeaux.fr",
           #folderPath="/EBOVAC/assays/EBL2001/ICS",
           folderPath=subF,  #"/VASI/VICI/SISTM",
-          schemaName=paste0("assay.General.",assay),#"assay.General.Vici_Sistm",
+          #schemaName=paste0("assay.General.",assay),#"assay.General.Vici_Sistm",
+          schemaName=paste0("assay.",expressionAssayType,".",assay),
           queryName="Data",
           viewName="",
           colSort="",
@@ -69,7 +73,8 @@ app_server <- function(input, output, session) {
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
             folderPath=subF,  #"/VASI/VICI/SISTM",
-            schemaName=paste0("assay.General.",meta1),#"assay.General.Vici_Sistm",
+            #schemaName=paste0("assay.General.",meta1),#"assay.General.Vici_Sistm",
+            schemaName=paste0("assay.",metaAssayType,".",meta1),
             queryName="Data",
             viewName="",
             colSort="",
@@ -82,7 +87,8 @@ app_server <- function(input, output, session) {
             baseUrl="https://labk.bph.u-bordeaux.fr",
             #folderPath="/EBOVAC/assays/EBL2001/ICS",
             folderPath=subF,  #"/VASI/VICI/SISTM",
-            schemaName=paste0("assay.General.",meta2),#"assay.General.Vici_Sistm",
+            #schemaName=paste0("assay.General.",meta2),#"assay.General.Vici_Sistm",
+            schemaName=paste0("assay.",meta2AssayType,".",meta2),
             queryName="Data",
             viewName="",
             colSort="",
